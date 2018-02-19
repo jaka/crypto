@@ -14,15 +14,18 @@ int base64_encode(char *output, char *input, const unsigned int input_len)
   char *s = output;
   while (input_len - i >= 3) {
     *s++ = base64_encoding_table[*p >> 2];
-    *(s++) = base64_encoding_table[((*p & 0x3) << 4) | (*(++p) >> 4)];
-    *(s++) = base64_encoding_table[((*p & 0xf) << 2) | (*(++p) >> 6)];
+    *(s++) = base64_encoding_table[((*p & 0x3) << 4) | (*(p + 1) >> 4)];
+    p++;
+    *(s++) = base64_encoding_table[((*p & 0xf) << 2) | (*(p + 1) >> 6)];
+    p++;
     *(s++) = base64_encoding_table[*(p++) & 0x3f];
     i += 3;
   }
   if (input_len - i != 0) {
     *s++ = base64_encoding_table[*p >> 2];
     if (input_len - i == 2) {
-      *(s++) = base64_encoding_table[((*p & 0x3) << 4) | (*(++p) >> 4)];
+      *(s++) = base64_encoding_table[((*p & 0x3) << 4) | (*(p + 1) >> 4)];
+      p++;
       *(s++) = base64_encoding_table[(*p & 0xf) << 2];
     }
     else {
