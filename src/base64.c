@@ -1,3 +1,5 @@
+#include "common.h"
+
 #include <stdlib.h>
 
 static const char base64_encoding_table[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
@@ -13,7 +15,7 @@ static void _build_decoding_table(void)
   }
 }
 
-void base64_destroy_decoding_table(void)
+EXPORT void base64_free_decoding_table(void)
 {
   if (base64_decoding_table) {
     free(base64_decoding_table);
@@ -21,7 +23,7 @@ void base64_destroy_decoding_table(void)
   }
 }
 
-unsigned int base64_encoded_length(const unsigned int input_len)
+EXPORT unsigned int base64_encoded_length(const unsigned int input_len)
 {
   if (input_len == 0) {
     return 0;
@@ -29,11 +31,11 @@ unsigned int base64_encoded_length(const unsigned int input_len)
   return 4 * ((input_len - 1) / 3) + 4;
 }
 
-int base64_encode(const char *input, char *output, const unsigned int input_len)
+EXPORT int base64_encode(const char *input, char *output, const unsigned int input_len)
 {
-  unsigned int i = 0;
   char *p = (char *)input;
   char *s = output;
+  unsigned int i = 0;
 
   while (input_len - i >= 3) {
     *s++ = base64_encoding_table[*p >> 2];
@@ -61,7 +63,7 @@ int base64_encode(const char *input, char *output, const unsigned int input_len)
   return 0;
 }
 
-unsigned int base64_decoded_length(const unsigned int input_len)
+EXPORT unsigned int base64_decoded_length(const unsigned int input_len)
 {
   if (input_len == 0) {
     return 0;
@@ -69,7 +71,7 @@ unsigned int base64_decoded_length(const unsigned int input_len)
   return 3 * ((input_len + 3) / 4);
 }
 
-int base64_decode(const char *input, char *output, unsigned int input_len)
+EXPORT unsigned int base64_decode(const char *input, char *output, unsigned int input_len)
 {
   char *s = (char *)input;
   char *d = output;

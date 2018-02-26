@@ -1,5 +1,7 @@
+#include "common.h"
 #include "sha1.h"
 #include "hmac.h"
+
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
@@ -154,7 +156,7 @@ static void _sha1_continue(sha1_state_t *state, const unsigned char *buf, unsign
   }
 }
 
-void sha1(const unsigned char *buf, unsigned int buflen, unsigned char *hash)
+EXPORT void sha1(const unsigned char *buf, unsigned int buflen, unsigned char *hash)
 {
   sha1_state_t state;
 
@@ -162,7 +164,7 @@ void sha1(const unsigned char *buf, unsigned int buflen, unsigned char *hash)
   _sha1_continue(&state, buf, buflen, hash);
 }
 
-void hmac_sha1(unsigned char *buf, unsigned int buflen, const unsigned char *key, unsigned char *hmac)
+EXPORT void hmac_sha1(unsigned char *buf, unsigned int buflen, const unsigned char *key, unsigned char *hmac)
 {
   unsigned char *b, *k;
   unsigned int i;
