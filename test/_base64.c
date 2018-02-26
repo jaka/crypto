@@ -2,7 +2,7 @@
 #include "test.h"
 #include <string.h>
 
-int test_X(char *input, char *output)
+static int test_X(const char *input, const char *output)
 {
   char encoded[80];
   char decoded[80];
@@ -31,22 +31,30 @@ int test_X(char *input, char *output)
   return 0;
 }
 
+static int test_without(void)
+{
+  char *encoded = "TQ";
+  char decoded[80];
+  unsigned int decoded_len;
+
+  decoded_len = base64_decode(encoded, decoded, 2);
+  *(decoded + decoded_len) = 0;
+  if (assert_string("base64_decode", decoded, "M") < 0) {
+    return 1;
+  }
+  return 0;
+}
+
 int main(void)
 {
-  char *input;
-
   test_title("Testing BASE64");
 
-  if (test_X("M", "TQ==") < 0) {
-    return -1;
+  if (test_X("M", "TQ==") < 0 || test_X("Ma", "TWE=") < 0 || test_X("Man", "TWFu") < 0) {
+    return 1;
   }
 
-  if (test_X("Ma", "TWE=") < 0) {
-    return -1;
-  }
-
-  if (test_X("Man", "TWFu") < 0) {
-    return -1;
+  if (test_without() < 0) {
+    return 1;
   }
 
   return 0;

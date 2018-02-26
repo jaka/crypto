@@ -1,12 +1,12 @@
 #include "../src/sha1.c"
 #include "test.h"
 
-int test_X(char *input, unsigned char *hash)
+static int test_X(const char *input, const unsigned char *hash)
 {
-  unsigned char output[20];
+  unsigned char output[SHA1_LENGTH];
 
-  sha1(input, strlen(input), output);
-  if (assert_int((unsigned char *)input, memcmp(hash, output, 20), 0) < 0) {
+  sha1((const unsigned char *)input, strlen(input), output);
+  if (assert_int(input, memcmp(hash, output, SHA1_LENGTH), 0) < 0) {
     return -1;
   }
   return 0;

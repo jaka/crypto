@@ -1,4 +1,5 @@
 #include "sha1.h"
+#include "hmac.h"
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
@@ -21,6 +22,7 @@ typedef struct {
   uint32_t d;
   uint32_t e;
   uint32_t t;
+  uint64_t be_len;
 } sha1_state_t;
 
 typedef union {
@@ -89,23 +91,31 @@ static void _sha1_block(sha1_msg_t *msg, sha1_state_t *s)
   s->e += ls.e;
 }
 
-int sha1(unsigned char *buf, unsigned int buflen, unsigned char *hash)
+static void _sha1_init(sha1_state_t *state, unsigned int buflen)
 {
-  sha1_msg_t msg;
-  sha1_state_t s;
-  size_t len;
-  unsigned int i, bit_added = 0, size_added = 0;
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-  uint64_t BE_len = swap_uint64(8 * buflen);
+  uint64_t be_len = swap_uint64(8 * buflen);
 #else
-  uint64_t BE_len = (uint64_t)(8 * buflen);
+  uint64_t be_len = (uint64_t)(8 * buflen);
 #endif
+  state->be_len = be_len;
 
-  s.a = SHA1_A;
-  s.b = SHA1_B;
-  s.c = SHA1_C;
-  s.d = SHA1_D;
-  s.e = SHA1_E;
+  state->a = SHA1_A;
+  state->b = SHA1_B;
+  state->c = SHA1_C;
+  state->d = SHA1_D;
+  state->e = SHA1_E;
+}
+
+static void _sha1_continue(sha1_state_t *state, const unsigned char *buf, unsigned int buflen, unsigned char *hash)
+{
+  char *s;
+  sha1_msg_t msg;
+  unsigned int len, i, added_bit, added_size;
+
+  s = (char *)buf;
+  added_bit = 0;
+  added_size = 0;
 
   do {
 
@@ -118,30 +128,72 @@ int sha1(unsigned char *buf, unsigned int buflen, unsigned char *hash)
       len = sizeof(msg);
       buflen -= sizeof(msg);
     }
-    memcpy(msg.c, buf, len);
+    memcpy(msg.c, s, len);
 
-    if (len < sizeof(msg) && !bit_added) {
+    if (len < sizeof(msg) && !added_bit) {
       *(msg.c + len) = 0x80;
-      bit_added++;
+      added_bit++;
     }
-    if (len < sizeof(msg) - 8 && !size_added) {
-      memcpy(msg.c + 56, (unsigned char *)&BE_len, 8);
-      size_added++;
+    if (len < (sizeof(msg) - 8) && !added_size) {
+      memcpy(msg.c + 56, (unsigned char *)&(state->be_len), 8);
+      added_size++;
     }
-    _sha1_block(&msg, &s);
-    buf += len;
+    _sha1_block(&msg, state);
+    s += len;
 
-  } while (!size_added || !bit_added);
+  } while (!added_bit || !added_size);
 
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
   for (i = 0; i < 5; i++) {
-    *((uint32_t *)&s + i) = swap_uint32(*((uint32_t *)&s + i));
+    *((uint32_t *)state + i) = swap_uint32(*((uint32_t *)state + i));
   }
 #endif
 
   for (i = 0; i < 20; i++) {
-    *(hash + i) = *((unsigned char *)&s + i);
+    *(hash + i) = *((unsigned char *)state + i);
+  }
+}
+
+void sha1(const unsigned char *buf, unsigned int buflen, unsigned char *hash)
+{
+  sha1_state_t state;
+
+  _sha1_init(&state, buflen);
+  _sha1_continue(&state, buf, buflen, hash);
+}
+
+void hmac_sha1(unsigned char *buf, unsigned int buflen, const unsigned char *key, unsigned char *hmac)
+{
+  unsigned char *b, *k;
+  unsigned int i;
+  unsigned char header[HMAC_KEY_LENGTH + SHA1_LENGTH];
+  sha1_state_t state;
+  sha1_msg_t msg;
+
+  /* XOR key with IPAD. */
+  b = header;
+  k = (unsigned char *)key;
+  for (i = HMAC_KEY_LENGTH; i; i--) {
+    *b = *k ^ HMAC_IPAD;
+    b++;
+    k++;
   }
 
-  return 0;
+  /* First HMAC pass. */
+  _sha1_init(&state, buflen + HMAC_KEY_LENGTH);
+  memcpy(msg.c, header, HMAC_KEY_LENGTH);
+  _sha1_block(&msg, &state);
+  _sha1_continue(&state, buf, buflen, header + HMAC_KEY_LENGTH);
+
+  /* XOR key with OPAD. */
+  b = header;
+  k = (unsigned char *)key;
+  for (i = HMAC_KEY_LENGTH; i; i--) {
+    *b = *k ^ HMAC_OPAD;
+    b++;
+    k++;
+  }
+
+  /* Second HMAC pass. */
+  sha1(header, SHA1_LENGTH + HMAC_KEY_LENGTH, hmac);
 }
