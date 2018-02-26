@@ -12,7 +12,7 @@ static void test_ok(void)
   ok++;
 }
 
-static void test_fail(void)
+void test_fail(void)
 {
   printf("[" ANSI_COLOR_RED "FAIL" ANSI_COLOR_RESET "] ");
   fail++;
@@ -64,6 +64,18 @@ int assert_u8(char *text, uint8_t value, uint8_t expected)
   return 0;
 }
 
+int assert_int(const char *text, const int value, const int expected)
+{
+  if (value != expected) {
+    test_fail();
+    printf("INT %s: value %u, expected %u\n", text, value, expected);
+    return -1;
+  }
+  test_ok();
+  printf("INT %s: value %u\n", text, value);
+  return 0;
+}
+
 int assert_uint(const char *text, const unsigned int value, const unsigned int expected)
 {
   if (value != expected) {
@@ -76,12 +88,23 @@ int assert_uint(const char *text, const unsigned int value, const unsigned int e
   return 0;
 }
 
-int assert_string(const char *text, char *value, const char *expected)
+int assert_string(const char *text, const char *value, const char *expected)
 {
-  unsigned int expected_len = strlen(expected);
-  unsigned int len = strnlen(value, expected_len + 1);
-  value[len] = 0;
-  if (expected_len != len) {
+  unsigned int expected_len;
+  unsigned int len;
+  if (!value) {
+    if (!expected) {
+      test_ok();
+      printf("STRING %s: value NULL\n", text);
+      return 0;
+    }
+    test_fail();
+    printf("STRING %s: value NULL, expected %s\n", text, expected);
+    return -1;
+  }
+  expected_len = strlen(expected);
+  len = strnlen(value, expected_len + 1);
+  if (len < expected_len || *(value + expected_len) != 0) {
     test_fail();
     printf("STRING %s: value %s, expected %s\n", text, value, expected);
     return -1;

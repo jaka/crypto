@@ -10,7 +10,10 @@
 #define ANSI_COLOR_RESET   "\x1b[0m"
 
 void test_title(char *);
+void test_fail(void);
 
+int assert_int(const char *, const int, const int);
 int assert_uint(const char *, const unsigned int, const unsigned int);
+int assert_string(const char *, const char *, const char *);
 
 #endif
