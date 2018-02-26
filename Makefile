@@ -5,6 +5,7 @@ SFLAGS := -R .comment -R .gnu.version -R .gnu.version_r -R .note -R .note.ABI-ta
 
 CC ?= cc
 LD ?= ld
+DESTDIR ?= /usr/lib
 
 SOURCES	:= $(wildcard src/*.c)
 OBJECTS	:= $(patsubst %.c,%.o,$(SOURCES))
@@ -22,6 +23,13 @@ $(TARGET): $(OBJECTS)
 
 test:
 	$(MAKE) -C test/ all
+
+install: $(TARGET)
+	install -m 755 $(TARGET) $(DESTDIR)/
+
+install-dev:
+	mkdir -p $(DESTDIR)/crypto
+	cp ./include/*.h $(DESTDIR)/crypto
 
 clean:
 	rm -f $(OBJECTS)
