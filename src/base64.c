@@ -96,28 +96,29 @@ EXPORT unsigned int base64_decode(const char *input, char *output, unsigned int 
     s++;
     *d |= value >> 4;
     input_len--;
+    d++;
     if (!input_len) {
       break;
     }
-    d++;
     *d = (value << 4) & 0xff;
 
     value = *(base64_decoding_table + *s);
     s++;
     input_len--;
     *d |= value >> 2;
+    d++;
     if (!input_len) {
       break;
     }
-    d++;
     *d = (value << 6) & 0xff;
 
     value = *(base64_decoding_table + *s);
     s++;
     input_len--;
     *d |= value;
+    d++;
   }
-  len = d - output + 1;
+  len = d - output;
 
   return len;
 }

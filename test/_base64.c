@@ -53,6 +53,10 @@ int main(void)
     return 1;
   }
 
+  if (test_X("liblibre.so", "bGlibGlicmUuc28=") < 0) {
+    return 1;
+  }
+
   if (test_without() < 0) {
     return 1;
   }
